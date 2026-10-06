@@ -5,12 +5,24 @@ let ac = null;
 let muted = false;
 try { muted = localStorage.getItem(CONFIG.muteKey) === '1'; } catch (e) { /* ignore */ }
 
+// Browsers only let sound start from a real user gesture. On phones the touch
+// counts when the finger lifts, so callers keep calling this on every tap and
+// key press until isRunning() is true. A one-sample silent buffer is played as
+// well, which some iOS versions need before they will output anything.
 export function unlock() {
   try {
     if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
-    if (ac.state === 'suspended') ac.resume();
-  } catch (e) { ac = null; }
+    if (ac.state !== 'running') {
+      const p = ac.resume();
+      if (p && p.catch) p.catch(() => {});
+      const src = ac.createBufferSource();
+      src.buffer = ac.createBuffer(1, 1, 22050);
+      src.connect(ac.destination);
+      src.start(0);
+    }
+  } catch (e) { /* try again on the next gesture */ }
 }
+export function isRunning() { return !!ac && ac.state === 'running'; }
 export function isMuted() { return muted; }
 export function toggleMute() {
   muted = !muted;

@@ -24,6 +24,8 @@ export class NameScene {
     this.el.removeEventListener('keydown', this.onKey);
     window.removeEventListener('keydown', this.onWinKey, true);
     this.el.blur();
+    // the phone keyboard can leave the page scrolled; put it back
+    setTimeout(() => window.scrollTo(0, 0), 60);
     input.locked = false;
     input.down.clear();
   }

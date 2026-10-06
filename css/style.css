@@ -11,7 +11,9 @@ body {
   min-height: 100dvh;
   overflow: hidden;
   -webkit-user-select: none; user-select: none;
-  touch-action: none;
+  /* allow pinch-zoom on the page so nobody gets stuck zoomed in; the game
+     canvas and buttons below opt out so taps and holds stay instant */
+  touch-action: manipulation;
 }
 .stage { position: relative; line-height: 0; }
 canvas {
@@ -20,6 +22,7 @@ canvas {
   image-rendering: crisp-edges;
   background: #0b0a1a;
   outline: none;
+  touch-action: none;
 }
 .hidden { display: none !important; }
 
@@ -32,7 +35,8 @@ canvas {
   border: 0;
   border-bottom: calc(1px * var(--scale)) solid #9D89E0;
   font: inherit;
-  font-size: calc(8px * var(--scale));
+  /* at least 16px, or iPhone Safari zooms the page in when the box is focused */
+  font-size: max(16px, calc(8px * var(--scale)));
   text-transform: uppercase;
   text-align: center;
   letter-spacing: 0.05em;

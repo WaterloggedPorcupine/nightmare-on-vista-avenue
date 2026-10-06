@@ -2,7 +2,7 @@ import { W, H, canvas, input, setScene, start, currentScene, step } from './engi
 import { CONFIG } from './config.js';
 import { bakeAll } from './sprites.js';
 import { Graveyard } from './background.js';
-import { sfx, unlock, isMuted, toggleMute } from './audio.js';
+import { sfx, unlock, isRunning, isMuted, toggleMute } from './audio.js';
 import { TitleScene } from './scenes/title.js';
 import { MenuScene } from './scenes/menu.js';
 import { NameScene } from './scenes/name.js';
@@ -69,9 +69,17 @@ const muteBtn = document.getElementById('mute');
 function renderMute() { muteBtn.textContent = isMuted() ? '\u{1F507}' : '\u{1F50A}'; muteBtn.classList.toggle('off', isMuted()); }
 muteBtn.addEventListener('click', (e) => { e.stopPropagation(); unlock(); toggleMute(); renderMute(); });
 window.addEventListener('keydown', (e) => { if (e.code === 'KeyM' && !input.locked) { toggleMute(); renderMute(); } });
-const unlockOnce = () => { unlock(); window.removeEventListener('pointerdown', unlockOnce); window.removeEventListener('keydown', unlockOnce); };
-window.addEventListener('pointerdown', unlockOnce);
-window.addEventListener('keydown', unlockOnce);
+// Keep trying to start sound on every gesture until it is actually running.
+// On touch screens only the finger lifting (pointerup / touchend / click) counts.
+const UNLOCK_EVENTS = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'];
+function tryUnlock() {
+  unlock();
+  setTimeout(() => { if (isRunning()) UNLOCK_EVENTS.forEach((ev) => window.removeEventListener(ev, tryUnlock, true)); }, 0);
+}
+function listenForUnlock() { UNLOCK_EVENTS.forEach((ev) => window.addEventListener(ev, tryUnlock, { capture: true, passive: true })); }
+listenForUnlock();
+// Phones suspend audio when the tab goes to the background; start listening again on return.
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !isRunning()) listenForUnlock(); });
 renderMute();
 
 // ---- boot once the pixel font is ready (or after a short timeout) ----
