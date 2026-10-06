@@ -75,6 +75,7 @@ body.is-touch .touch {
   text-decoration: none; font-size: 9px;
 }
 .back-link:hover { color: #f4f1e8; }
+body.embedded .back-link { display: none; }
 .mute {
   position: fixed; right: 10px; top: 6px;
   background: transparent; border: 0; color: rgba(244,241,232,0.6);

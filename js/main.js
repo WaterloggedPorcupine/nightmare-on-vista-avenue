@@ -42,6 +42,9 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
+// ---- embedded in another page (e.g. the zhurisolan.com project page) ----
+if (window.self !== window.top) document.body.classList.add('embedded');
+
 // ---- touch controls ----
 if (window.matchMedia('(pointer: coarse)').matches) document.body.classList.add('is-touch');
 for (const btn of document.querySelectorAll('.touch button')) {
