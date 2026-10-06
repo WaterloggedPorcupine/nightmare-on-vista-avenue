@@ -1,6 +1,6 @@
 # Nightmare on Vista Avenue
 
-A pixel-art graveyard side-scroller built for a Halloween party. Dodge dancing skeletons, spinning pumpkins, flying ghosts and dropping spiders, make it through the castle door, and answer the Keeper's questions. Get the last one wrong and the ghosts win. Get it right and you survive until morning.
+A pixel-art graveyard side-scroller built for my Halloween themed birthday party. Dodge dancing skeletons, spinning pumpkins, flying ghosts and dropping spiders, make it through the castle door, and answer the Keeper's questions. Get the last one wrong and the ghosts win. Get it right and you survive until morning.
 
 **Play it:** https://waterloggedporcupine.github.io/nightmare-on-vista-avenue/
 
