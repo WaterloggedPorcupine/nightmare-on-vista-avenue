@@ -87,9 +87,10 @@ export const CONFIG = {
     formAction: 'https://docs.google.com/forms/d/e/1FAIpQLSe9Xgdu3rVIuN7EyHKCFxcjXT95LZqb-cBMslQogqmgbLTCMA/formResponse',
     nameField: 'entry.1818623611',      // "Name", short answer, required
     answerField: 'entry.1288523868',    // "Which activity will you be participating in?", multiple choice, required
-    options: ['Trick or Treating', 'Dance Party', 'Both'],   // must match the form's options exactly
+    options: ['Trick or Treating', 'Dance Party', 'Both', "Can't Make It"],   // must match the form's options exactly
     question: 'Will you be coming trick or treating, to the dance party, or both?',
     thanks: 'Thank you, and see you soon!',
+    thanksFor: { "Can't Make It": "Sorry you can't make it! Thanks for letting me know." },
     skipWarning: "If you don't tell me, Zhuri will be spooked to see you there!",
     skipped: 'No RSVP sent. Happy Halloween!',
     pendingKey: 'nova.pendingRsvp'

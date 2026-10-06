@@ -17,7 +17,7 @@ A pixel-art graveyard side-scroller built for my Halloween themed birthday party
 - Through the door, a slide congratulates the player for making it that far: to RSVP, they must answer these questions three.
 - The Keeper then asks three multiple-choice questions in a pixel cutscene board: Zhuri's favorite childhood Halloween movie, her favorite holiday, and her birthday. A wrong answer to either of the first two just gets asked again, without giving the answer away.
 - A wrong birthday answer brings the ghost swarm and a tombstone: "You didn't make it to Zhuri's birthday party. Better luck next year." Players can resurrect and try the question again as many times as it takes.
-- A right answer brings the sunrise that scares the ghosts away, then an RSVP: Trick or Treating, Dance Party, Both, or Skip. Skipping asks for confirmation first.
+- A right answer brings the sunrise that scares the ghosts away, then an RSVP: Trick or Treating, Dance Party, Both, Can't Make It, or Skip. Skipping asks for confirmation first.
 
 ## Tech
 

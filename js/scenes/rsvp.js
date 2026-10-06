@@ -23,9 +23,9 @@ export class RsvpScene {
   // Option boxes, shared by draw and tap.
   optionRects() {
     const opts = this.options();
-    const [y0, w, step] = this.state === 'warn' ? [104, 150, 17] : [66, 176, 15];
+    const [y0, w, step] = this.state === 'warn' ? [104, 150, 17] : [63, 176, 13];
     const x = Math.round((W - w) / 2);
-    return opts.map((_, i) => ({ x, y: y0 + i * step - 4, w, h: 14 }));
+    return opts.map((_, i) => ({ x, y: y0 + i * step - 4, w, h: step < 15 ? 12 : 14 }));
   }
   tap(x, y) {
     if (this.state === 'ask' || this.state === 'warn') {
@@ -72,7 +72,7 @@ export class RsvpScene {
 
   drawOptions(c, opts) {
     this.optionRects().forEach((r, i) => {
-      const label = opts[i], x = r.x, w = r.w, y = r.y + 4;
+      const label = opts[i], x = r.x, w = r.w, y = r.y + (r.h < 14 ? 2 : 4);
       const sel = i === this.cursor;
       panel(c, x, r.y, w, r.h, { fill: sel ? '#241a44' : '#15122a', edge: sel ? PAL.gold : PAL.plum, inner: '#15122a' });
       text(c, label, W / 2, y, { align: 'center', color: sel ? PAL.gold : PAL.grey });
@@ -90,7 +90,7 @@ export class RsvpScene {
     sprite(c, SPR.player.cheer, 150, GROUND_Y - 20 - hop);
 
     if (this.state === 'ask') {
-      panel(c, 12, 4, W - 24, 122);
+      panel(c, 12, 4, W - 24, 126);
       text(c, 'RSVP, ' + (this.game.name || 'FRIEND'), W / 2, 11, { align: 'center', color: PAL.gold });
       wrap(R.question, 34).forEach((row, i) => text(c, row, W / 2, 25 + i * 11, { align: 'center', color: PAL.bone }));
       this.drawOptions(c, ASK);
@@ -103,9 +103,11 @@ export class RsvpScene {
       panel(c, 40, 66, W - 80, 32);
       text(c, 'Sending your RSVP...', W / 2, 78, { align: 'center', color: PAL.bone });
     } else {
-      const msg = this.state === 'thanks' ? R.thanks : R.skipped;
-      panel(c, 24, 46, W - 48, 64);
-      wrap(msg.toUpperCase(), 17).forEach((row, i) => text(c, row, W / 2, 58 + i * 18, { align: 'center', size: 16, color: PAL.gold, shadow: PAL.rust }));
+      const msg = this.state === 'thanks' ? ((R.thanksFor && R.thanksFor[this.answer]) || R.thanks) : R.skipped;
+      const rows = wrap(msg.toUpperCase(), 17);
+      const ph = 16 + rows.length * 18, py = Math.max(6, Math.round(78 - ph / 2));
+      panel(c, 24, py, W - 48, ph);
+      rows.forEach((row, i) => text(c, row, W / 2, py + 10 + i * 18, { align: 'center', size: 16, color: PAL.gold, shadow: PAL.rust }));
       if (this.timer > 0.8 && blink()) text(c, 'PRESS ENTER TO PLAY AGAIN', W / 2, 162, { align: 'center', color: PAL.bone, shadow: PAL.ink });
     }
   }
