@@ -11,6 +11,16 @@ export const CONFIG = {
     'But in order to make it there, you must face the scariest beings known...'
   ],
 
+  // The Keeper's congratulations after the castle door, before the questions.
+  // {name} is replaced with the player's name.
+  keeperIntro: {
+    title: 'CONGRATULATIONS, {name}!',
+    paragraphs: [
+      'You survived Vista Avenue and made it to the castle door!',
+      'But to RSVP, you must answer these questions three.'
+    ]
+  },
+
   // Asked in order after the castle door. A wrong answer to any question but the
   // last just asks it again; a wrong answer to the last one is a death (with resurrection).
   questions: [

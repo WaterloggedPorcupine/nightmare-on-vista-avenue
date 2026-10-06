@@ -103,7 +103,10 @@ export class LevelScene {
           p.x += 28 * dt; p.anim += dt * 10; p.facing = 1;
           p.alpha = clamp(1 - (this.timer - 1.0) / 0.8, 0, 1);
         }
-        if (this.timer > 2.1) this.game.go('question', 0);
+        if (this.timer > 2.1) {
+          const K = CONFIG.keeperIntro, name = this.game.name || 'TRAVELER';
+          this.game.go('invite', { title: K.title.replace('{name}', name), paragraphs: K.paragraphs, next: 'question', nextArgs: [0], scream: false });
+        }
         break;
     }
     if (input.justPressed('back')) this.game.go('menu');
