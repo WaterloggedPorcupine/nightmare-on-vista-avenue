@@ -56,16 +56,17 @@ export class InstructionsScene {
     }
 
     // hazards row
-    text(c, 'AVOID', 18, 88, { color: PAL.red, shadow: PAL.ink });
-    sprite(c, SPR.skeleton[Math.floor(t * 4) % 2], 66, 82);
-    c.save(); c.translate(94, 94); c.rotate(t * 5); c.drawImage(SPR.pumpkin, -6, -6); c.restore();
-    sprite(c, SPR.ghost[Math.floor(t * 4) % 2], 112, 84 + Math.round(Math.sin(t * 3) * 2));
-    c.fillStyle = PAL.grey; c.fillRect(144, 78, 1, 8);
-    sprite(c, SPR.spider, 140, 84 + Math.round(Math.sin(t * 2) * 2));
-    text(c, 'REACH', 176, 88, { color: PAL.teal, shadow: PAL.ink });
-    c.save(); c.translate(224, 102); c.scale(0.5, 0.5); drawDoor(c, 0, 0, 0, 0); c.restore();
-    text(c, '3 LIVES', 256, 88, { color: PAL.pink, shadow: PAL.ink });
-    for (let i = 0; i < 3; i++) sprite(c, SPR.heart, 258 + i * 9, 98);
+    // bottom row, centered inside the board (inner edges 12..308)
+    text(c, 'AVOID', 27, 88, { color: PAL.red, shadow: PAL.ink });
+    sprite(c, SPR.skeleton[Math.floor(t * 4) % 2], 71, 82);
+    c.save(); c.translate(97, 94); c.rotate(t * 5); c.drawImage(SPR.pumpkin, -6, -6); c.restore();
+    sprite(c, SPR.ghost[Math.floor(t * 4) % 2], 111, 84 + Math.round(Math.sin(t * 3) * 2));
+    c.fillStyle = PAL.grey; c.fillRect(143, 78, 1, 8);
+    sprite(c, SPR.spider, 139, 84 + Math.round(Math.sin(t * 2) * 2));
+    text(c, 'REACH', 163, 88, { color: PAL.teal, shadow: PAL.ink });
+    c.save(); c.translate(209, 102); c.scale(0.5, 0.5); drawDoor(c, 0, 0, 0, 0); c.restore();
+    text(c, '3 LIVES', 237, 88, { color: PAL.pink, shadow: PAL.ink });
+    for (let i = 0; i < 3; i++) sprite(c, SPR.heart, 241 + i * 9, 98);
 
     if (blink()) text(c, this.next === 'level' ? 'PRESS ENTER TO BEGIN' : 'PRESS ENTER TO GO BACK', W / 2, 122, { align: 'center', color: PAL.bone, shadow: PAL.ink });
   }
