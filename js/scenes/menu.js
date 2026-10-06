@@ -13,7 +13,7 @@ export class MenuScene {
     if (input.justPressed('down')) { this.cursor = (this.cursor + 1) % ITEMS.length; sfx.move(); }
     if (input.justPressed('confirm')) {
       sfx.select();
-      if (this.cursor === 0) this.game.go('name');
+      if (this.cursor === 0) this.game.go('invite');
       else this.game.go('instructions', { next: 'menu' });
     }
   }

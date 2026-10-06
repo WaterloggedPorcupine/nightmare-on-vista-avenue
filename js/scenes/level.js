@@ -44,11 +44,6 @@ export class LevelScene {
       const sx = cursor + z.left;
       if (sx + z.right > L.length - 170) break;
       this.hazards.push(this.makeHazard(type, sx, r));
-      if (type === 'ghost' && L.ghostPairs && r() < 0.5) {
-        const twin = this.makeHazard('ghost', sx, r);
-        twin.off = this.hazards[this.hazards.length - 1].off + 34;
-        this.hazards.push(twin);
-      }
       cursor = sx + z.right + L.clear[0] + r() * (L.clear[1] - L.clear[0]);
     }
   }
@@ -66,10 +61,19 @@ export class LevelScene {
     const sp = this.cfg.speeds;
     switch (type) {
       case 'skeleton': return { type, x, sx: x, y: GROUND_Y - 18, w: 12, h: 18, dir: r() < 0.5 ? -1 : 1, speed: sp.skeleton, range: 34, anim: r() * 3 };
-      case 'pumpkin': return { type, x, sx: x, y: GROUND_Y - 12, w: 12, h: 12, state: 'idle', speed: sp.pumpkin, rot: 0, cooldown: 0, bob: r() * 6 };
-      case 'ghost': return { type, x, sx: x, y: GROUND_Y - 25, w: 12, h: 12, phase: r() * 6.28, off: r() * 200, sweep: this.cfg.ghostSweep, speed: sp.ghost, amp: this.cfg.ghostAmp, alpha: 1, active: true };
+      case 'pumpkin': return { type, x, sx: x, y: GROUND_Y - 12, w: 12, h: 12, state: 'idle', speed: sp.pumpkin, rot: 0, timer: 0, bob: r() * 6, alpha: 1, active: true };
+      case 'ghost': {
+        // Ghosts start partway through a rest so they don't all fly in sync.
+        const g = { type, x: x + this.cfg.ghostSweep, sx: x, y: GROUND_Y - 25, w: 12, h: 12, phase: r() * 6.28, sweep: this.cfg.ghostSweep, speed: sp.ghost, amp: this.cfg.ghostAmp, alpha: 0, active: false, state: 'rest', timer: r() * this.restTime(r), rand: r };
+        return g;
+      }
       default: return { type, x, sx: x, y: 8, w: 10, h: 8, state: 'wait', speed: sp.spider, timer: 0 };
     }
+  }
+
+  restTime(r = Math.random) {
+    const [a, b] = this.cfg.ghostRest;
+    return a + r() * (b - a);
   }
 
   // ----- update -----
@@ -99,7 +103,7 @@ export class LevelScene {
           p.x += 28 * dt; p.anim += dt * 10; p.facing = 1;
           p.alpha = clamp(1 - (this.timer - 1.0) / 0.8, 0, 1);
         }
-        if (this.timer > 2.1) this.game.go('question', this.idx);
+        if (this.timer > 2.1) this.game.go('question', 0);
         break;
     }
     if (input.justPressed('back')) this.game.go('menu');
@@ -119,7 +123,7 @@ export class LevelScene {
     p.x = clamp(p.x, 0, this.length - 12);
     p.anim += dt * (move ? 9 : 0);
     if (p.inv > 0) p.inv -= dt;
-    this.camX = clamp(p.x - 110, 0, this.length - W);
+    this.camX = clamp(p.x - CONFIG.cameraLead, 0, this.length - W);
 
     for (const h of this.hazards) this.updateHazard(h, dt);
 
@@ -146,24 +150,44 @@ export class LevelScene {
         if (h.x > h.sx + h.range) h.dir = -1;
         if (h.x < h.sx - h.range) h.dir = 1;
         break;
-      case 'pumpkin':
+      case 'pumpkin': {
+        // idle -> windup (visible wobble) -> roll -> gone (invisible cooldown) -> idle
+        const L = this.cfg;
+        const fullyOnScreen = h.sx + h.w <= this.camX + W && h.sx >= this.camX;
+        const inRollZone = p.x + 12 > h.sx - L.pumpkinRoll - 4 && p.x < h.sx + h.w;
         if (h.state === 'idle') {
           h.bob += dt;
-          if (h.cooldown > 0) h.cooldown -= dt;
-          else if (p.x > h.sx - this.cfg.pumpkinRoll - 70 && p.x < h.sx + 10) h.state = 'roll';
-        } else {
+          if (fullyOnScreen && p.x + 12 < h.sx && !inRollZone) { h.state = 'windup'; h.timer = L.pumpkinWindup; }
+        } else if (h.state === 'windup') {
+          h.timer -= dt;
+          if (h.timer <= 0) h.state = 'roll';
+        } else if (h.state === 'roll') {
           h.x -= h.speed * dt; h.rot -= (h.speed / 6) * dt;
-          // rolls to the edge of its zone, then pops back to its patch
-          if (h.x < h.sx - this.cfg.pumpkinRoll) { h.state = 'idle'; h.x = h.sx; h.rot = 0; h.cooldown = 1.0; }
+          // rolls to the edge of its zone, then vanishes and later reappears on its patch
+          if (h.x < h.sx - L.pumpkinRoll) { h.state = 'gone'; h.timer = L.pumpkinCooldown; h.active = false; h.alpha = 0; }
+        } else if (h.state === 'gone') {
+          h.timer -= dt;
+          // never reappear on top of the player
+          if (h.timer <= 0 && Math.abs((p.x + 6) - (h.sx + 6)) > 28) {
+            h.state = 'idle'; h.x = h.sx; h.rot = 0; h.alpha = 0; h.active = true;
+          }
         }
+        if (h.state !== 'gone' && h.alpha < 1) h.alpha = Math.min(1, h.alpha + dt * 4);
         break;
+      }
       case 'ghost': {
-        const span = h.sweep * 2;
-        const u = ((clock.t * h.speed + h.off) % span) / span;
-        h.x = h.sx + h.sweep - u * span;
+        // rest (invisible, harmless) -> pass (fades in, flies left, fades out) -> rest
+        if (h.state === 'rest') {
+          h.timer -= dt; h.alpha = 0; h.active = false;
+          if (h.timer <= 0) { h.state = 'pass'; h.x = h.sx + h.sweep; }
+        } else {
+          h.x -= h.speed * dt;
+          const u = clamp((h.sx + h.sweep - h.x) / (h.sweep * 2), 0, 1);
+          h.alpha = clamp(Math.min(u, 1 - u) * 6, 0, 1);
+          h.active = h.alpha > 0.6;
+          if (u >= 1) { h.state = 'rest'; h.timer = this.restTime(); h.alpha = 0; h.active = false; }
+        }
         h.y = GROUND_Y - 25 + Math.sin(clock.t * 3 + h.phase) * h.amp;
-        h.alpha = clamp(Math.min(u, 1 - u) * 8, 0, 1);
-        h.active = h.alpha > 0.6;
         break;
       }
       case 'spider':
@@ -218,10 +242,14 @@ export class LevelScene {
       switch (h.type) {
         case 'skeleton': sprite(c, SPR.skeleton[Math.floor(h.anim * 4) % 2], h.x, h.y, h.dir < 0); break;
         case 'pumpkin':
-          if (h.state === 'roll') { c.save(); c.translate(Math.round(h.x) + 6, Math.round(h.y) + 6); c.rotate(h.rot); c.drawImage(SPR.pumpkin, -6, -6); c.restore(); }
-          else sprite(c, SPR.pumpkin, h.x, h.y + Math.round(Math.sin(h.bob * 4) * 0.5));
+          if (h.state === 'gone') break;
+          if (h.state === 'roll' || h.state === 'windup') {
+            const rot = h.state === 'roll' ? h.rot : Math.sin(clock.t * 28) * 0.3;
+            const hop = h.state === 'windup' ? -Math.abs(Math.round(Math.sin(clock.t * 14) * 1.5)) : 0;
+            c.save(); c.globalAlpha = h.alpha; c.translate(Math.round(h.x) + 6, Math.round(h.y) + 6 + hop); c.rotate(rot); c.drawImage(SPR.pumpkin, -6, -6); c.restore();
+          } else sprite(c, SPR.pumpkin, h.x, h.y + Math.round(Math.sin(h.bob * 4) * 0.5), false, h.alpha);
           break;
-        case 'ghost': sprite(c, SPR.ghost[Math.floor(clock.t * 4) % 2], h.x, h.y, false, h.alpha * 0.95); break;
+        case 'ghost': if (h.alpha > 0) sprite(c, SPR.ghost[Math.floor(clock.t * 4) % 2], h.x, h.y, false, h.alpha * 0.95); break;
         case 'spider':
           c.fillStyle = 'rgba(201,196,184,0.7)'; c.fillRect(Math.round(h.x) + 4, 0, 1, Math.round(h.y) + 2);
           sprite(c, SPR.spider, h.x, h.y);
@@ -254,9 +282,9 @@ export class LevelScene {
     if (this.state === 'intro') {
       const a = this.timer < 1.3 ? 1 : clamp(1 - (this.timer - 1.3) / 0.5, 0, 1);
       c.globalAlpha = a;
-      panel(c, 70, 60, 180, 44);
-      text(c, 'LEVEL ' + (this.idx + 1), W / 2, 70, { align: 'center', color: PAL.gold, shadow: PAL.ink });
-      text(c, this.cfg.name, W / 2, 86, { align: 'center', color: PAL.red, shadow: PAL.blood });
+      panel(c, 50, 58, 220, 48);
+      text(c, this.cfg.name, W / 2, 68, { align: 'center', size: 16, color: PAL.red, shadow: PAL.blood });
+      text(c, 'REACH THE CASTLE DOOR', W / 2, 90, { align: 'center', color: PAL.gold, shadow: PAL.ink });
       c.globalAlpha = 1;
     }
     if (this.state === 'dead') {

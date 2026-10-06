@@ -4,12 +4,14 @@ import { SPR } from '../sprites.js';
 import { sfx } from '../audio.js';
 
 export class QuestionScene {
-  constructor(game, qIndex) {
+  constructor(game, qIndex, opts = {}) {
     this.game = game; this.qIndex = qIndex; this.q = CONFIG.questions[qIndex];
     this.isFinal = qIndex === CONFIG.questions.length - 1;
+    this.retry = !!opts.retry;
   }
   enter() {
-    this.lines = [...(this.q.lines || []), this.q.prompt];
+    const lead = this.retry && this.q.retryLines ? this.q.retryLines : (this.retry ? [] : (this.q.lines || []));
+    this.lines = [...lead, this.q.prompt];
     this.lineIdx = 0; this.chars = 0; this.state = 'typing'; this.cursor = 0; this.timer = 0; this.result = null;
     this.game.bg.screamEnabled = false;
     sfx.bell();
@@ -52,8 +54,8 @@ export class QuestionScene {
   }
   next() {
     if (this.isFinal) this.game.go('ending', this.result);
-    else if (this.result) this.game.go('level', this.qIndex + 1);
-    else this.game.go('level', this.qIndex);
+    else if (this.result) this.game.go('question', this.qIndex + 1);
+    else this.game.go('question', this.qIndex, { retry: true });   // ask again, no level replay
   }
   draw(c) {
     const bg = this.game.bg;

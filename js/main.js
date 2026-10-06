@@ -10,10 +10,13 @@ import { InstructionsScene } from './scenes/instructions.js';
 import { LevelScene } from './scenes/level.js';
 import { QuestionScene } from './scenes/question.js';
 import { EndingScene } from './scenes/ending.js';
+import { InviteScene } from './scenes/invite.js';
+import { RsvpScene } from './scenes/rsvp.js';
+import { flushPendingRsvp } from './rsvp.js';
 
 const SCENES = {
   title: TitleScene, menu: MenuScene, name: NameScene, instructions: InstructionsScene,
-  level: LevelScene, question: QuestionScene, ending: EndingScene
+  invite: InviteScene, level: LevelScene, question: QuestionScene, ending: EndingScene, rsvp: RsvpScene
 };
 
 bakeAll();
@@ -77,6 +80,9 @@ const fontReady = Promise.race([
   new Promise((res) => setTimeout(res, 2500))
 ]).catch(() => {});
 fontReady.then(() => { game.go('title'); start(); });
+
+// resend an RSVP that couldn't go out last time (e.g. the player was offline)
+flushPendingRsvp();
 
 // handy for debugging from the console
 window.NOVA = { game, scene: currentScene, input, step };

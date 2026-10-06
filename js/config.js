@@ -6,49 +6,70 @@ export const CONFIG = {
   screams: ['AAAAHHHH!!', 'EEEEEEK!!', 'HELP ME!!', 'AAAAHHHH!!'],
   lives: 3,
 
+  invite: [
+    "You've been invited to Zhuri's Halloween Birthday Party!",
+    'But in order to make it there, you must face the scariest beings known...'
+  ],
+
+  // Asked back to back after the castle door. A wrong answer to the first one
+  // just asks it again; a wrong answer to the last one is a death (with resurrection).
   questions: [
     {
       lines: [],
       prompt: "What is Zhuri's favorite childhood Halloween movie?",
       options: ['Hocus Pocus', 'Twitches', 'Halloweentown'],
       answer: 2,
-      correct: 'CORRECT! But the road ahead only gets darker...',
-      wrong: 'WRONG! The ghosts drag you back to where you started...'
+      correct: 'CORRECT! One more question stands between you and the party...',
+      wrong: 'WRONG! The Keeper gives you another chance...'
     },
     {
       lines: ["Zhuri's birthday falls in the spookiest month of the year..."],
+      retryLines: ["Back from the dead? Let's try that again..."],
       prompt: 'What day in October does her birthday fall on?',
-      options: ['October 13th', 'October 29th', 'October 31st'],
-      answer: 1
+      options: ['October 26th', 'October 29th', 'October 31st'],
+      answer: 1,
+      correct: 'CORRECT! The party awaits...',
+      wrong: 'WRONG! The ghosts are coming for you...'
     }
   ],
 
+  // One level for the invitation.
   levels: [
     {
       name: 'VISTA AVENUE',
-      length: 2200,
+      length: 2400,
       seed: 7,
       clear: [64, 104],          // safe ground between hazard zones (px)
       speeds: { skeleton: 28, pumpkin: 70, ghost: 50, spider: 130 },
-      ghostSweep: 44,
+      ghostSweep: 44,            // a ghost flies from sx + sweep to sx - sweep
       ghostAmp: 3,
-      pumpkinRoll: 110,
-      spiderTrigger: 70,
-      ghostPairs: false
-    },
-    {
-      name: 'THE CRYPT ROAD',
-      length: 3000,
-      seed: 13,
-      clear: [38, 62],
-      speeds: { skeleton: 40, pumpkin: 110, ghost: 72, spider: 185 },
-      ghostSweep: 56,
-      ghostAmp: 5,
-      pumpkinRoll: 150,
-      spiderTrigger: 58,
-      ghostPairs: true
+      ghostRest: [2.5, 3.5],     // seconds a ghost stays away between passes
+      pumpkinRoll: 110,          // how far a pumpkin rolls before it resets
+      pumpkinWindup: 0.7,        // seconds a pumpkin wobbles before it rolls
+      pumpkinCooldown: 2.5,      // seconds before a reset pumpkin can roll again
+      spiderTrigger: 70
     }
   ],
 
-  player: { speed: 72, jump: 210, gravity: 520 }
+  // Where the camera keeps the player, in pixels from the left edge of the screen.
+  cameraLead: 80,
+
+  player: { speed: 72, jump: 210, gravity: 520 },
+
+  lose: ["You didn't make it to Zhuri's birthday party.", 'Better luck next year.'],
+  win: "You made it to Zhuri's birthday party!",
+
+  // RSVP: answers are posted straight to Zhuri's Google Form.
+  // To find new entry IDs if the form changes, see "RSVP form" in the README.
+  rsvp: {
+    formAction: 'https://docs.google.com/forms/d/e/1FAIpQLSe9Xgdu3rVIuN7EyHKCFxcjXT95LZqb-cBMslQogqmgbLTCMA/formResponse',
+    nameField: 'entry.1818623611',      // "Name", short answer, required
+    answerField: 'entry.1288523868',    // "Which activity will you be participating in?", multiple choice, required
+    options: ['Trick or Treating', 'Dance Party', 'Both'],   // must match the form's options exactly
+    question: 'Will you be coming trick or treating, to the dance party, or both?',
+    thanks: 'Thank you, and see you soon!',
+    skipWarning: "If you don't tell me, Zhuri will be spooked to see you there!",
+    skipped: 'No RSVP sent. Happy Halloween!',
+    pendingKey: 'nova.pendingRsvp'
+  }
 };

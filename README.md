@@ -1,19 +1,21 @@
 # Nightmare on Vista Avenue
 
-A pixel-art graveyard side-scroller built for my Halloween themed birthday party. Dodge dancing skeletons, spinning pumpkins, flying ghosts and dropping spiders, make it through the castle door, and answer the Keeper's questions. Get the last one wrong and the ghosts win. Get it right and you survive until morning.
+A pixel-art graveyard side-scroller built for my Halloween themed birthday party. It doubles as the party invitation. Dodge dancing skeletons, spinning pumpkins, flying ghosts and dropping spiders, make it through the castle door, and answer the Keeper's questions. Make it to the party and you can RSVP right from the game.
 
-**Play it:** https://waterloggedporcupine.github.io/nightmare-on-vista-avenue/
+**Play it:** https://nightmare.zhurisolan.com
 
 ![Title screen: a moonlit graveyard with rolling fog and a scream scrawled across the sky](assets/preview.gif)
 
 ## How it works
 
 - Title screen, then a graveyard menu with rolling fog and a scream that writes itself across the sky every seven seconds.
+- An invitation screen: you've been invited to Zhuri's Halloween birthday party, but to get there you must face the scariest beings known.
 - Players type their name once; the game remembers it between visits.
 - Controls: **Up** jumps, **Right** runs forward, **Left** runs back, **Down** ducks. Phones get on-screen buttons.
-- Two levels of increasing difficulty, each ending at a Dracula-castle door.
-- Behind each door, a multiple-choice question in a pixel cutscene board.
-- Two endings: a swarm of ghosts and a tombstone, or a swarm of ghosts chased off by the sunrise.
+- One level, Vista Avenue, ending at a Dracula-castle door. Pumpkins wobble before they roll, and ghosts rest between passes, so every hazard gives fair warning.
+- Behind the door, the Keeper asks two multiple-choice questions in a pixel cutscene board. A wrong movie answer just gets asked again.
+- A wrong birthday answer brings the ghost swarm and a tombstone: "You didn't make it to Zhuri's birthday party. Better luck next year." Players can resurrect and try the question again as many times as it takes.
+- A right answer brings the sunrise that scares the ghosts away, then an RSVP: Trick or Treating, Dance Party, Both, or Skip. Skipping asks for confirmation first.
 
 ## Tech
 
@@ -27,7 +29,8 @@ js/engine.js        canvas, fixed-step loop, input, scene manager, text/panel he
 js/sprites.js       pixel art + procedural props
 js/background.js    sky, moon, stars, hills, fog, the sky-scream
 js/audio.js         synth sound effects
-js/scenes/          title, menu, name, instructions, level, question, ending
+js/rsvp.js          sends RSVP answers to the Google Form
+js/scenes/          title, menu, invite, name, instructions, level, question, ending, rsvp
 ```
 
 ## Run locally
@@ -42,18 +45,25 @@ then open http://localhost:8080.
 
 ## Customize
 
-Everything party-specific (questions, correct answers, hazard speeds, number of lives, scream text) lives in `js/config.js`.
+Everything party-specific (invitation text, questions, correct answers, hazard speeds and timing, number of lives, ending text, RSVP settings) lives in `js/config.js`.
+
+For testing from the browser console, `window.NOVA` exposes `game`, `scene()`, `input` and `step(n, draw)`. For example, `NOVA.game.go('level', 0)` jumps to the level and `NOVA.step(600, false)` runs ten seconds of game time without drawing.
+
+## RSVP form
+
+RSVP answers are posted straight to Zhuri's Google Form from the browser, since the site has no server. The settings are in the `rsvp` section of `js/config.js`:
+
+- `formAction`: the form's address, ending in `/formResponse` instead of `/viewform`.
+- `nameField` and `answerField`: the form's `entry.NNNNNN` field IDs.
+- `options`: the answer choices. They must match the form's multiple-choice options exactly, or Google rejects the response.
+
+If the form changes, find the new field IDs like this: open the form, choose "Get pre-filled link" from its menu, fill in sample answers, click "Get link", and copy the `entry.NNNNNN` numbers out of that link.
+
+Google's response can't be read from another site, so the game treats a completed request as sent. If the player is offline, the game retries once, then saves the answer and sends it the next time the game loads. Please don't send test responses to the live form; to test, replace `window.fetch` with a stub from the console first.
 
 ## Hosting
 
-Served by GitHub Pages from the root of the `main` branch. The project page on [zhurisolan.com](https://zhurisolan.com) embeds it.
-
-It is set up to move to `nightmare.zhurisolan.com`. Once the custom domain is set in the Pages settings, the github.io address redirects there automatically, so existing links and the embed keep working. To switch over, do both steps in the same sitting:
-
-1. In Settings → Pages, set the custom domain to `nightmare.zhurisolan.com`.
-2. At the DNS provider for zhurisolan.com, add a `CNAME` record with host `nightmare` pointing to `waterloggedporcupine.github.io`.
-
-Then tick "Enforce HTTPS" once GitHub finishes issuing the certificate.
+Served by GitHub Pages from the root of the `main` branch at the custom domain `nightmare.zhurisolan.com` (see `CNAME`). DNS has a `CNAME` record from `nightmare` to `waterloggedporcupine.github.io`, and the old github.io address redirects to the custom domain. The project page on [zhurisolan.com](https://zhurisolan.com) embeds it.
 
 ## License
 
