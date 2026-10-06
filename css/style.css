@@ -1,0 +1,83 @@
+:root { --scale: 3; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: #050410;
+  color: #f4f1e8;
+  font-family: 'Press Start 2P', monospace;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  overflow: hidden;
+  -webkit-user-select: none; user-select: none;
+  touch-action: none;
+}
+.stage { position: relative; line-height: 0; }
+canvas {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #0b0a1a;
+  outline: none;
+}
+.hidden { display: none !important; }
+
+/* Name entry: a real input so phones get a keyboard */
+.name-input {
+  position: absolute;
+  left: 15%; top: 48%; width: 70%; height: 12%;
+  background: #14121c;
+  color: #f4f1e8;
+  border: 0;
+  border-bottom: calc(1px * var(--scale)) solid #9D89E0;
+  font: inherit;
+  font-size: calc(8px * var(--scale));
+  text-transform: uppercase;
+  text-align: center;
+  letter-spacing: 0.05em;
+  outline: none;
+  caret-color: #E089A0;
+  border-radius: 0;
+  padding: 0;
+  line-height: 1;
+}
+.name-input::placeholder { color: #5b4a9a; }
+
+/* Touch controls (shown only on coarse pointers) */
+.touch { display: none; }
+body.is-touch .touch {
+  display: flex;
+  position: fixed; left: 0; right: 0; bottom: 0;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 16px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  pointer-events: none;
+  line-height: 1;
+}
+.touch-left, .touch-right { display: flex; gap: 10px; pointer-events: auto; }
+.touch button {
+  width: 52px; height: 52px;
+  border: 2px solid rgba(244,241,232,0.55);
+  background: rgba(20,18,28,0.55);
+  color: #f4f1e8;
+  font: inherit; font-size: 16px;
+  border-radius: 0;
+  touch-action: none;
+}
+.touch button.ok { font-size: 10px; }
+.touch button:active, .touch button.held { background: rgba(157,137,224,0.6); }
+
+.back-link {
+  position: fixed; left: 10px; top: 8px;
+  color: rgba(244,241,232,0.45);
+  text-decoration: none; font-size: 9px;
+}
+.back-link:hover { color: #f4f1e8; }
+.mute {
+  position: fixed; right: 10px; top: 6px;
+  background: transparent; border: 0; color: rgba(244,241,232,0.6);
+  font-size: 16px; cursor: pointer; line-height: 1;
+}
+.mute.off { opacity: 0.4; }

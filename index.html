@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Nightmare on Vista Avenue</title>
+  <meta name="description" content="A pixel-art graveyard side-scroller. Dodge dancing skeletons, spinning pumpkins, flying ghosts and spiders, reach the castle door, and survive the quiz until morning." />
+  <meta name="theme-color" content="#0b0a1a" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="stage" id="stage">
+    <canvas id="game" width="320" height="180" aria-label="Nightmare on Vista Avenue game"></canvas>
+    <input id="name-input" class="name-input hidden" type="text" maxlength="12"
+           autocomplete="off" autocapitalize="characters" spellcheck="false"
+           placeholder="YOUR NAME" aria-label="Enter your name" />
+    <div class="touch" id="touch" aria-hidden="true">
+      <div class="touch-left">
+        <button type="button" data-key="left">&#9664;</button>
+        <button type="button" data-key="right">&#9654;</button>
+      </div>
+      <div class="touch-right">
+        <button type="button" data-key="down">&#9660;</button>
+        <button type="button" data-key="up">&#9650;</button>
+        <button type="button" data-key="confirm" class="ok">OK</button>
+      </div>
+    </div>
+  </div>
+  <a class="back-link" href="https://zhurisolan.com">&larr; zhurisolan.com</a>
+  <button type="button" class="mute" id="mute" aria-label="Toggle sound">&#128266;</button>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
