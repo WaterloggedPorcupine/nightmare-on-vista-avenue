@@ -1,7 +1,7 @@
 // After the birthday question.
 // Wrong answer: ghost swarm, tombstone, "didn't make it" text, then Resurrect or Rest in peace.
 // Right answer: ghost swarm, sunrise scares them away, "you made it", then on to the RSVP.
-import { W, GROUND_Y, input, text, panel, wrap, sprite, clamp, blink, clock, PAL } from '../engine.js';
+import { W, GROUND_Y, input, text, panel, wrap, sprite, clamp, blink, clock, hitIndex, PAL } from '../engine.js';
 import { CONFIG } from '../config.js';
 import { SPR, drawTombstone, drawTree, drawDoor } from '../sprites.js';
 import { sfx } from '../audio.js';
@@ -22,6 +22,26 @@ export class EndingScene {
     sfx.swarm();
   }
   exit() { this.game.bg.screamEnabled = true; }
+
+  loseRects() {
+    const widths = [104, 128], gap = 12;
+    let x = Math.round((W - widths[0] - widths[1] - gap) / 2);
+    return widths.map((w) => { const r = { x, y: 153, w, h: 17 }; x += w + gap; return r; });
+  }
+  chooseLose(i) {
+    sfx.select();
+    if (i === 0) { this.state = 'rise'; this.timer = 0; sfx.sunrise(); }
+    else this.game.go('title');
+  }
+  tap(x, y) {
+    if (this.state === 'dead') {
+      if (this.timer < 0.6) return true;
+      const i = hitIndex(this.loseRects(), x, y);
+      if (i >= 0) { this.cursor = i; this.chooseLose(i); }
+      return true;
+    }
+    return this.state !== 'won';   // on the win screen a tap acts like OK
+  }
 
   scatter(g, speed = 1) {
     if (!g.vx && !g.vy) { g.vx = Math.cos(g.a) * (90 + Math.random() * 80) * speed; g.vy = (-60 - Math.random() * 90) * speed; }
@@ -61,11 +81,7 @@ export class EndingScene {
         if (this.timer < 0.6) break;   // don't let a held Enter skip the death screen
         if (input.justPressed('up') || input.justPressed('left')) { this.cursor = 0; sfx.move(); }
         if (input.justPressed('down') || input.justPressed('right')) { this.cursor = 1; sfx.move(); }
-        if (input.justPressed('confirm')) {
-          sfx.select();
-          if (this.cursor === 0) { this.state = 'rise'; this.timer = 0; sfx.sunrise(); }
-          else this.game.go('title');
-        }
+        if (input.justPressed('confirm')) this.chooseLose(this.cursor);
         break;
 
       case 'rise':
@@ -166,14 +182,11 @@ export class EndingScene {
   }
 
   drawLoseOptions(c) {
-    const y = 158, widths = [104, 128], gap = 12;
-    let x = Math.round((W - widths[0] - widths[1] - gap) / 2);
-    LOSE_OPTIONS.forEach((label, i) => {
-      const sel = i === this.cursor;
-      panel(c, x, y - 5, widths[i], 17, { fill: sel ? '#241a44' : '#15122a', edge: sel ? PAL.gold : PAL.plum, inner: '#15122a' });
-      text(c, label, x + widths[i] / 2, y, { align: 'center', color: sel ? PAL.gold : PAL.grey });
-      if (sel) c.drawImage(SPR.heart, x - 9 + Math.round(Math.sin(clock.t * 6) * 1.5), y);
-      x += widths[i] + gap;
+    this.loseRects().forEach((r, i) => {
+      const sel = i === this.cursor, y = r.y + 5;
+      panel(c, r.x, r.y, r.w, r.h, { fill: sel ? '#241a44' : '#15122a', edge: sel ? PAL.gold : PAL.plum, inner: '#15122a' });
+      text(c, LOSE_OPTIONS[i], r.x + r.w / 2, y, { align: 'center', color: sel ? PAL.gold : PAL.grey });
+      if (sel) c.drawImage(SPR.heart, r.x - 9 + Math.round(Math.sin(clock.t * 6) * 1.5), y);
     });
   }
 }

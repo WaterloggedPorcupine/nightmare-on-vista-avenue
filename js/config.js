@@ -11,16 +11,28 @@ export const CONFIG = {
     'But in order to make it there, you must face the scariest beings known...'
   ],
 
-  // Asked back to back after the castle door. A wrong answer to the first one
-  // just asks it again; a wrong answer to the last one is a death (with resurrection).
+  // Asked in order after the castle door. A wrong answer to any question but the
+  // last just asks it again; a wrong answer to the last one is a death (with resurrection).
   questions: [
     {
       lines: [],
       prompt: "What is Zhuri's favorite childhood Halloween movie?",
       options: ['Hocus Pocus', 'Twitches', 'Halloweentown'],
       answer: 2,
-      correct: 'CORRECT! One more question stands between you and the party...',
+      correct: 'CORRECT! But the Keeper has more questions...',
       wrong: 'WRONG! The Keeper gives you another chance...'
+    },
+    {
+      lines: [],
+      prompt: "What is Zhuri's favorite holiday?",
+      options: ['Christmas', 'Halloween', 'Your mom', "New Year's Day"],
+      answer: 0,
+      correct: 'CORRECT! Ho ho ho... One last question...',
+      wrong: 'WRONG! Think merrier... try again.',
+      wrongFor: {
+        'Halloween': "So close! She loves it, but it's not her favorite. Try again...",
+        'Your mom': 'Nice try. The Keeper is not amused. Try again...'
+      }
     },
     {
       lines: ["Zhuri's birthday falls in the spookiest month of the year..."],

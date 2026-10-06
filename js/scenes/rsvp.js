@@ -1,6 +1,6 @@
 // The RSVP after a win: Trick or Treating / Dance Party / Both / Skip.
 // Answers go to Zhuri's Google Form; Skip asks for confirmation first.
-import { W, GROUND_Y, input, text, panel, wrap, sprite, blink, clock, PAL } from '../engine.js';
+import { W, GROUND_Y, input, text, panel, wrap, sprite, blink, clock, hitIndex, PAL } from '../engine.js';
 import { CONFIG } from '../config.js';
 import { SPR, drawTombstone, drawTree, drawDoor } from '../sprites.js';
 import { sfx } from '../audio.js';
@@ -19,6 +19,23 @@ export class RsvpScene {
   exit() { this.game.bg.screamEnabled = true; }
 
   options() { return this.state === 'warn' ? WARN : ASK; }
+
+  // Option boxes, shared by draw and tap.
+  optionRects() {
+    const opts = this.options();
+    const [y0, w, step] = this.state === 'warn' ? [104, 150, 17] : [66, 176, 15];
+    const x = Math.round((W - w) / 2);
+    return opts.map((_, i) => ({ x, y: y0 + i * step - 4, w, h: 14 }));
+  }
+  tap(x, y) {
+    if (this.state === 'ask' || this.state === 'warn') {
+      if (this.timer <= 0.3) return true;
+      const i = hitIndex(this.optionRects(), x, y);
+      if (i >= 0) { this.cursor = i; this.choose(); }
+      return true;
+    }
+    return this.state === 'sending';   // on the final screens a tap acts like OK
+  }
 
   update(dt) {
     this.timer += dt;
@@ -53,12 +70,11 @@ export class RsvpScene {
     });
   }
 
-  drawOptions(c, opts, y0, w = 176, step = 17) {
-    const x = Math.round((W - w) / 2);
-    opts.forEach((label, i) => {
-      const y = y0 + i * step;
+  drawOptions(c, opts) {
+    this.optionRects().forEach((r, i) => {
+      const label = opts[i], x = r.x, w = r.w, y = r.y + 4;
       const sel = i === this.cursor;
-      panel(c, x, y - 4, w, 14, { fill: sel ? '#241a44' : '#15122a', edge: sel ? PAL.gold : PAL.plum, inner: '#15122a' });
+      panel(c, x, r.y, w, r.h, { fill: sel ? '#241a44' : '#15122a', edge: sel ? PAL.gold : PAL.plum, inner: '#15122a' });
       text(c, label, W / 2, y, { align: 'center', color: sel ? PAL.gold : PAL.grey });
       if (sel) c.drawImage(SPR.heart, x - 10 + Math.round(Math.sin(clock.t * 6) * 1.5), y);
     });
@@ -77,12 +93,12 @@ export class RsvpScene {
       panel(c, 12, 4, W - 24, 122);
       text(c, 'RSVP, ' + (this.game.name || 'FRIEND'), W / 2, 11, { align: 'center', color: PAL.gold });
       wrap(R.question, 34).forEach((row, i) => text(c, row, W / 2, 25 + i * 11, { align: 'center', color: PAL.bone }));
-      this.drawOptions(c, ASK, 66, 176, 15);
+      this.drawOptions(c, ASK);
     } else if (this.state === 'warn') {
       panel(c, 12, 30, W - 24, 112, { edge: PAL.red, inner: PAL.blood, fill: '#1e0c14' });
       text(c, 'WAIT!', W / 2, 38, { align: 'center', color: PAL.red });
       wrap(R.skipWarning, 32).forEach((row, i) => text(c, row, W / 2, 54 + i * 11, { align: 'center', color: PAL.bone }));
-      this.drawOptions(c, WARN, 104, 150);
+      this.drawOptions(c, WARN);
     } else if (this.state === 'sending') {
       panel(c, 40, 66, W - 80, 32);
       text(c, 'Sending your RSVP...', W / 2, 78, { align: 'center', color: PAL.bone });

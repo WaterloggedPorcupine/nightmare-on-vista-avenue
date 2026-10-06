@@ -147,3 +147,12 @@ export function sprite(c, img, x, y, flip = false, alpha = 1) {
 export function aabb(a, b) {
   return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 }
+
+// Index of the rectangle {x, y, w, h} containing the point, or -1.
+export function hitIndex(rects, x, y) {
+  for (let i = 0; i < rects.length; i++) {
+    const r = rects[i];
+    if (r && x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) return i;
+  }
+  return -1;
+}

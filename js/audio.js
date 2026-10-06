@@ -5,11 +5,45 @@ let ac = null;
 let muted = false;
 try { muted = localStorage.getItem(CONFIG.muteKey) === '1'; } catch (e) { /* ignore */ }
 
+// "Playback" mode lets sound play even when an iPhone's ring/silent switch is
+// on silent. It is only switched on when the player explicitly asks for sound.
+let wantPlayback = false;
+let playbackReady = false;
+let silentEl = null;
+
+function silentWavUrl() {
+  // 0.5 s of 8-bit mono silence at 8 kHz
+  const n = 4000, buf = new ArrayBuffer(44 + n), v = new DataView(buf);
+  const str = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  str(0, 'RIFF'); v.setUint32(4, 36 + n, true); str(8, 'WAVE'); str(12, 'fmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, 8000, true); v.setUint32(28, 8000, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true);
+  str(36, 'data'); v.setUint32(40, n, true);
+  for (let i = 0; i < n; i++) v.setUint8(44 + i, 128);
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+}
+
+function applyPlayback() {
+  if (!wantPlayback || playbackReady) return;
+  try {
+    // iOS 17+ and other browsers that support the Audio Session API
+    if (navigator.audioSession) { navigator.audioSession.type = 'playback'; playbackReady = true; return; }
+  } catch (e) { /* fall through */ }
+  // Older iOS: a playing <audio> element switches the page into playback mode.
+  try {
+    if (!silentEl) { silentEl = new Audio(silentWavUrl()); silentEl.loop = true; silentEl.setAttribute('playsinline', ''); }
+    const p = silentEl.play();
+    if (p && p.then) p.then(() => { playbackReady = true; }).catch(() => {});
+    else playbackReady = true;
+  } catch (e) { /* try again on the next gesture */ }
+}
+
 // Browsers only let sound start from a real user gesture. On phones the touch
 // counts when the finger lifts, so callers keep calling this on every tap and
 // key press until isRunning() is true. A one-sample silent buffer is played as
 // well, which some iOS versions need before they will output anything.
 export function unlock() {
+  applyPlayback();
   try {
     if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
     if (ac.state !== 'running') {
@@ -23,11 +57,23 @@ export function unlock() {
   } catch (e) { /* try again on the next gesture */ }
 }
 export function isRunning() { return !!ac && ac.state === 'running'; }
+// True while sound still needs a user gesture to finish starting.
+export function needsGesture() { return !isRunning() || (wantPlayback && !playbackReady); }
 export function isMuted() { return muted; }
-export function toggleMute() {
-  muted = !muted;
-  try { localStorage.setItem(CONFIG.muteKey, muted ? '1' : '0'); } catch (e) { /* ignore */ }
-  return muted;
+export function setMuted(m, persist = true) {
+  muted = !!m;
+  if (muted) {
+    wantPlayback = false;
+    if (silentEl) { try { silentEl.pause(); } catch (e) { /* ignore */ } playbackReady = false; }
+  }
+  if (persist) { try { localStorage.setItem(CONFIG.muteKey, muted ? '1' : '0'); } catch (e) { /* ignore */ } }
+}
+export function toggleMute() { setMuted(!muted); return muted; }
+// The player asked for sound: unmute and play even if the phone is on silent.
+export function enableSound(persist = true) {
+  wantPlayback = true;
+  setMuted(false, persist);
+  unlock();
 }
 
 function tone(freq, dur, type = 'square', vol = 0.12, slideTo = null, delay = 0) {

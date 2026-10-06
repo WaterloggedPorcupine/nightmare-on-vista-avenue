@@ -2,7 +2,7 @@ import { W, H, canvas, input, setScene, start, currentScene, step } from './engi
 import { CONFIG } from './config.js';
 import { bakeAll } from './sprites.js';
 import { Graveyard } from './background.js';
-import { sfx, unlock, isRunning, isMuted, toggleMute } from './audio.js';
+import { sfx, unlock, needsGesture, isMuted, setMuted, enableSound } from './audio.js';
 import { TitleScene } from './scenes/title.js';
 import { MenuScene } from './scenes/menu.js';
 import { NameScene } from './scenes/name.js';
@@ -60,26 +60,55 @@ for (const btn of document.querySelectorAll('.touch button')) {
   btn.addEventListener('pointerleave', up);
   btn.addEventListener('contextmenu', (e) => e.preventDefault());
 }
-canvas.addEventListener('pointerdown', (e) => { e.preventDefault(); input.press('confirm'); });
+// A tap on the game goes to the option under the finger when the scene has
+// tappable options; otherwise it acts like pressing OK.
+canvas.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  const r = canvas.getBoundingClientRect();
+  const gx = (e.clientX - r.left) * W / r.width, gy = (e.clientY - r.top) * H / r.height;
+  const scene = currentScene();
+  if (scene && scene.tap && scene.tap(gx, gy)) return;
+  input.press('confirm');
+});
 canvas.addEventListener('pointerup', () => input.release('confirm'));
 canvas.addEventListener('pointercancel', () => input.release('confirm'));
 
 // ---- audio unlock + mute ----
-const muteBtn = document.getElementById('mute');
-function renderMute() { muteBtn.textContent = isMuted() ? '\u{1F507}' : '\u{1F50A}'; muteBtn.classList.toggle('off', isMuted()); }
-muteBtn.addEventListener('click', (e) => { e.stopPropagation(); unlock(); toggleMute(); renderMute(); });
-window.addEventListener('keydown', (e) => { if (e.code === 'KeyM' && !input.locked) { toggleMute(); renderMute(); } });
 // Keep trying to start sound on every gesture until it is actually running.
 // On touch screens only the finger lifting (pointerup / touchend / click) counts.
 const UNLOCK_EVENTS = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'];
 function tryUnlock() {
   unlock();
-  setTimeout(() => { if (isRunning()) UNLOCK_EVENTS.forEach((ev) => window.removeEventListener(ev, tryUnlock, true)); }, 0);
+  setTimeout(() => { if (!needsGesture()) UNLOCK_EVENTS.forEach((ev) => window.removeEventListener(ev, tryUnlock, true)); }, 0);
 }
 function listenForUnlock() { UNLOCK_EVENTS.forEach((ev) => window.addEventListener(ev, tryUnlock, { capture: true, passive: true })); }
 listenForUnlock();
 // Phones suspend audio when the tab goes to the background; start listening again on return.
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !isRunning()) listenForUnlock(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && needsGesture()) listenForUnlock(); });
+
+// Phones start muted and ask once (on the menu) whether to play with sound.
+// "Sound on" also plays through the iPhone silent switch, since the player asked for it.
+const isTouch = document.body.classList.contains('is-touch');
+const SOUND_KEY = 'nova.soundChoice';
+function readSoundChoice() { try { return localStorage.getItem(SOUND_KEY); } catch (e) { return null; } }
+function saveSoundChoice(v) { try { localStorage.setItem(SOUND_KEY, v); } catch (e) { /* ignore */ } }
+game.askSound = false;
+if (isTouch) {
+  const choice = readSoundChoice();
+  if (choice === 'on') enableSound(false);
+  else { setMuted(true, false); game.askSound = choice !== 'off'; }
+}
+game.setSound = (on) => {
+  if (on) { enableSound(!isTouch); listenForUnlock(); } else setMuted(true, !isTouch);
+  if (isTouch) saveSoundChoice(on ? 'on' : 'off');
+  game.askSound = false;
+  renderMute();
+};
+
+const muteBtn = document.getElementById('mute');
+function renderMute() { muteBtn.textContent = isMuted() ? '\u{1F507}' : '\u{1F50A}'; muteBtn.classList.toggle('off', isMuted()); }
+muteBtn.addEventListener('click', (e) => { e.stopPropagation(); game.setSound(isMuted()); });
+window.addEventListener('keydown', (e) => { if (e.code === 'KeyM' && !input.locked) game.setSound(isMuted()); });
 renderMute();
 
 // ---- boot once the pixel font is ready (or after a short timeout) ----

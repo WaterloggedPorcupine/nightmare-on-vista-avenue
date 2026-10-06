@@ -1,4 +1,4 @@
-import { W, H, input, text, panel, wrap, blink, clock, PAL } from '../engine.js';
+import { W, H, input, text, panel, wrap, blink, clock, hitIndex, PAL } from '../engine.js';
 import { CONFIG } from '../config.js';
 import { SPR } from '../sprites.js';
 import { sfx } from '../audio.js';
@@ -18,6 +18,21 @@ export class QuestionScene {
   }
   exit() { this.game.bg.screamEnabled = true; }
   currentLine() { return this.lines[this.lineIdx]; }
+
+  // Answer boxes, shared by draw and tap. Four answers sit a little closer together.
+  optionRects() {
+    const n = this.q.options.length, step = n > 3 ? 14 : 18;
+    return this.q.options.map((_, i) => ({ x: 64, y: 85 + i * step, w: 200, h: n > 3 ? 13 : 16 }));
+  }
+
+  // Tapping an answer picks it. While choosing, taps anywhere else do nothing,
+  // so a stray tap can't submit whichever answer happens to be highlighted.
+  tap(x, y) {
+    if (this.state !== 'choose') return false;   // acts like OK: advance the dialogue
+    const i = hitIndex(this.optionRects(), x, y);
+    if (i >= 0) { this.cursor = i; this.answer(); }
+    return true;
+  }
   update(dt) {
     this.game.bg.update(dt);
     if (input.justPressed('back')) { this.game.go('menu'); return; }
@@ -48,6 +63,7 @@ export class QuestionScene {
     }
   }
   answer() {
+    if (this.state !== 'choose') return;
     this.result = this.cursor === this.q.answer;
     this.state = 'result'; this.timer = 0;
     if (this.result) sfx.correct(); else sfx.wrong();
@@ -81,15 +97,14 @@ export class QuestionScene {
 
     // options
     if (this.state !== 'typing') {
+      const rects = this.optionRects();
       for (let i = 0; i < this.q.options.length; i++) {
-        const y = 90 + i * 18;
+        const r = rects[i], y = r.y + (r.h > 14 ? 5 : 3);
         const sel = i === this.cursor;
         let color = sel ? PAL.gold : PAL.grey;
-        if (this.state === 'result') {
-          if (i === this.q.answer) color = PAL.ghoul;
-          else if (sel) color = PAL.red;
-        }
-        panel(c, 64, y - 5, 200, 16, { fill: sel ? '#241a44' : '#15122a', edge: sel ? PAL.gold : PAL.plum, inner: '#15122a' });
+        // Only the picked answer is colored, so a wrong guess doesn't give the answer away.
+        if (this.state === 'result' && sel) color = this.result ? PAL.ghoul : PAL.red;
+        panel(c, r.x, r.y, r.w, r.h, { fill: sel ? '#241a44' : '#15122a', edge: sel ? PAL.gold : PAL.plum, inner: '#15122a' });
         text(c, this.q.options[i], 76, y, { color });
         if (sel && this.state === 'choose') {
           const bob = Math.round(Math.sin(clock.t * 6) * 1.5);
@@ -101,7 +116,8 @@ export class QuestionScene {
     if (this.state === 'result') {
       const flash = this.timer < 0.3 ? 0.4 * (1 - this.timer / 0.3) : 0;
       if (flash > 0) { c.fillStyle = this.result ? `rgba(142,224,160,${flash})` : `rgba(198,47,47,${flash})`; c.fillRect(0, 0, W, H); }
-      const msg = this.result ? (this.q.correct || 'CORRECT!') : (this.q.wrong || 'WRONG!');
+      const picked = this.q.options[this.cursor];
+      const msg = this.result ? (this.q.correct || 'CORRECT!') : ((this.q.wrongFor && this.q.wrongFor[picked]) || this.q.wrong || 'WRONG!');
       const rows = wrap(msg, 34);
       panel(c, 16, 144, W - 32, 10 + rows.length * 11, { fill: this.result ? '#10261a' : '#2a0e0e', edge: this.result ? PAL.ghoul : PAL.red });
       for (let i = 0; i < rows.length; i++) text(c, rows[i], W / 2, 149 + i * 11, { align: 'center', color: this.result ? PAL.ghoul : PAL.pink });

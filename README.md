@@ -11,9 +11,10 @@ A pixel-art graveyard side-scroller built for my Halloween themed birthday party
 - Title screen, then a graveyard menu with rolling fog and a scream that writes itself across the sky every seven seconds.
 - An invitation screen: you've been invited to Zhuri's Halloween birthday party, but to get there you must face the scariest beings known.
 - Players type their name once; the game remembers it between visits.
-- Controls: **Up** jumps, **Right** runs forward, **Left** runs back, **Down** ducks. Phones get on-screen buttons.
+- Controls: **Up** jumps, **Right** runs forward, **Left** runs back, **Down** ducks. Phones get on-screen buttons, and answers and menu options can be tapped directly.
+- Phones start muted and ask once whether to play with sound. Choosing sound plays it even when the phone is on silent; the speaker icon in the corner changes it later.
 - One level, Vista Avenue, ending at a Dracula-castle door. Pumpkins wobble before they roll, and ghosts rest between passes, so every hazard gives fair warning.
-- Behind the door, the Keeper asks two multiple-choice questions in a pixel cutscene board. A wrong movie answer just gets asked again.
+- Behind the door, the Keeper asks three multiple-choice questions in a pixel cutscene board: Zhuri's favorite childhood Halloween movie, her favorite holiday, and her birthday. A wrong answer to either of the first two just gets asked again, without giving the answer away.
 - A wrong birthday answer brings the ghost swarm and a tombstone: "You didn't make it to Zhuri's birthday party. Better luck next year." Players can resurrect and try the question again as many times as it takes.
 - A right answer brings the sunrise that scares the ghosts away, then an RSVP: Trick or Treating, Dance Party, Both, or Skip. Skipping asks for confirmation first.
 
