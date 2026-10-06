@@ -10,10 +10,18 @@ export class QuestionScene {
     this.retry = !!opts.retry;
   }
   enter() {
-    const lead = this.retry && this.q.retryLines ? this.q.retryLines : (this.retry ? [] : (this.q.lines || []));
-    this.lines = [...lead, this.q.prompt];
-    this.lineIdx = 0; this.chars = 0; this.state = 'typing'; this.cursor = 0; this.timer = 0; this.result = null;
+    this.cursor = 0; this.timer = 0; this.result = null; this.footer = null;
     this.game.bg.screamEnabled = false;
+    if (this.retry) {
+      // Coming back (e.g. after resurrecting): the question is already written out
+      // and the answers are up right away. The retry line shows in the footer.
+      this.lines = [this.q.prompt];
+      this.lineIdx = 0; this.chars = this.q.prompt.length; this.state = 'choose';
+      this.footer = (this.q.retryLines && this.q.retryLines[0]) || null;
+    } else {
+      this.lines = [...(this.q.lines || []), this.q.prompt];
+      this.lineIdx = 0; this.chars = 0; this.state = 'typing';
+    }
     sfx.bell();
   }
   exit() { this.game.bg.screamEnabled = true; }
@@ -56,10 +64,16 @@ export class QuestionScene {
         if (input.justPressed('down')) { this.cursor = (this.cursor + 1) % this.q.options.length; sfx.move(); }
         if (input.justPressed('confirm')) this.answer();
         break;
-      case 'result':
+      case 'result': {
         this.timer += dt;
-        if (this.timer > (this.result ? 2.4 : 3.0) || (this.timer > 1.2 && input.justPressed('confirm'))) this.next();
+        // A wrong answer to a retryable question only shows the Keeper's reply
+        // briefly, then the same question is back with the answers still up.
+        const quickRetry = !this.result && !this.isFinal;
+        const wait = this.result ? 2.4 : (quickRetry ? 1.8 : 3.0);
+        const skipAfter = quickRetry ? 0.4 : 1.2;
+        if (this.timer > wait || (this.timer > skipAfter && input.justPressed('confirm'))) this.next();
         break;
+      }
     }
   }
   answer() {
@@ -71,7 +85,7 @@ export class QuestionScene {
   next() {
     if (this.isFinal) this.game.go('ending', this.result);
     else if (this.result) this.game.go('question', this.qIndex + 1);
-    else this.game.go('question', this.qIndex, { retry: true });   // ask again, no level replay
+    else { this.state = 'choose'; this.result = null; this.timer = 0; }   // same question, answers still up
   }
   draw(c) {
     const bg = this.game.bg;
@@ -122,7 +136,9 @@ export class QuestionScene {
       panel(c, 16, 144, W - 32, 10 + rows.length * 11, { fill: this.result ? '#10261a' : '#2a0e0e', edge: this.result ? PAL.ghoul : PAL.red });
       for (let i = 0; i < rows.length; i++) text(c, rows[i], W / 2, 149 + i * 11, { align: 'center', color: this.result ? PAL.ghoul : PAL.pink });
     } else if (this.state === 'choose') {
-      text(c, 'CHOOSE WISELY, ' + this.game.name, W / 2, 152, { align: 'center', color: PAL.purple });
+      const foot = this.footer || ('CHOOSE WISELY' + (this.game.name ? ', ' + this.game.name : ''));
+      const rows = wrap(foot, 36);
+      rows.forEach((row, i) => text(c, row, W / 2, 152 - (rows.length - 1) * 6 + i * 11, { align: 'center', color: PAL.purple }));
     }
   }
 }
